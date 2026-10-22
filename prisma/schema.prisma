@@ -1,0 +1,26 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// Une demande client. Immuable après création, sauf is_priority.
+model CustomerRequest {
+  /// UUID de soumission fourni par l’application (idempotence) : pas de valeur par défaut.
+  id            String   @id @db.Uuid
+  customerName  String   @map("customer_name") @db.VarChar(150)
+  customerEmail String?  @map("customer_email") @db.VarChar(254)
+  customerPhone String?  @map("customer_phone") @db.VarChar(30)
+  subject       String   @db.VarChar(200)
+  description   String   @db.Text
+  isPriority    Boolean  @default(false) @map("is_priority")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  /// Écrit explicitement, seulement sur changement réel (pas de @updatedAt).
+  updatedAt     DateTime @map("updated_at") @db.Timestamptz(3)
+
+  @@index([isPriority(sort: Desc), createdAt(sort: Desc), id(sort: Desc)], map: "idx_requests_list")
+  @@map("customer_requests")
+}
