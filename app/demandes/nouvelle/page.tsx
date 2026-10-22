@@ -4,7 +4,7 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { AppHeader, PageTitle } from "@/components/demandes/app-header";
 import { RequestForm } from "@/components/demandes/request-form";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { requireUser } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Nouvelle demande — Doztra" };
@@ -21,15 +21,12 @@ export default function NouvelleDemandePage() {
     <>
       <AppHeader>
         <div className="flex flex-col gap-3">
-          <Button
-            variant="night"
-            size="none"
-            nativeButton={false}
-            render={<Link href="/demandes" />}
-            className="min-h-9 gap-2 self-start rounded-[10px] px-3.5 py-2 text-[13px] font-semibold text-doztra-night-soft hover:text-doztra-night-soft"
+          <Link
+            href="/demandes"
+            className={buttonVariants({ variant: "night", size: "none", className: "min-h-9 gap-2 self-start rounded-[10px] px-3.5 py-2 text-[13px] font-semibold text-doztra-night-soft hover:text-doztra-night-soft" })}
           >
             <span aria-hidden="true">←</span> Demandes
-          </Button>
+          </Link>
           <PageTitle>Nouvelle demande</PageTitle>
           <p className="m-0 text-sm text-doztra-night-muted">
             Les champs marqués d’un astérisque (*) sont obligatoires.

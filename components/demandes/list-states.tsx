@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Alert } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RetryButton } from "./retry-button";
 
@@ -60,14 +60,12 @@ export function EmptyState() {
           Les demandes saisies par l’équipe apparaîtront ici.
         </p>
       </div>
-      <Button
-        nativeButton={false}
-        render={<Link href="/demandes/nouvelle" />}
-        size="none"
-        className="min-h-11 rounded-xl px-[22px] py-3 text-sm"
+      <Link
+        href="/demandes/nouvelle"
+        className={buttonVariants({ size: "none", className: "min-h-11 rounded-xl px-[22px] py-3 text-sm" })}
       >
         Ajouter une demande
-      </Button>
+      </Link>
     </div>
   );
 }

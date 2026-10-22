@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 
 /** En-tête sombre commun aux écrans ; `children` reçoit le bloc titre propre à l’écran. */
 export function AppHeader({ children }: { children: React.ReactNode }) {
@@ -13,15 +13,12 @@ export function AppHeader({ children }: { children: React.ReactNode }) {
           <span className="text-[17px] font-extrabold tracking-[-0.01em]">Doztra</span>
         </div>
         <nav aria-label="Navigation principale" className="hidden gap-1.5 min-[960px]:flex">
-          <Button
-            variant="night"
-            size="none"
-            nativeButton={false}
-            render={<Link href="/demandes" />}
-            className="rounded-[11px] px-4 py-[9px] text-[13px] font-semibold"
+          <Link
+            href="/demandes"
+            className={buttonVariants({ variant: "night", size: "none", className: "rounded-[11px] px-4 py-[9px] text-[13px] font-semibold" })}
           >
             Demandes
-          </Button>
+          </Link>
         </nav>
         <div className="flex items-center gap-2.5">
           <span className="hidden text-[13px] text-doztra-night-muted min-[960px]:inline">

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { createRequest } from "@/server/actions/create-request";
@@ -166,15 +166,12 @@ export function RequestForm({ submissionId }: { submissionId: string }) {
       </fieldset>
 
       <div className="flex flex-wrap-reverse justify-end gap-2.5 pt-1">
-        <Button
-          variant="outline"
-          size="none"
-          nativeButton={false}
-          render={<Link href="/demandes" />}
-          className="min-h-[50px] max-w-[200px] flex-[1_1_140px] rounded-[13px] px-5 py-[13px] text-[15px]"
+        <Link
+          href="/demandes"
+          className={buttonVariants({ variant: "outline", size: "none", className: "min-h-[50px] max-w-[200px] flex-[1_1_140px] rounded-[13px] px-5 py-[13px] text-[15px]" })}
         >
           Annuler
-        </Button>
+        </Link>
         <Button
           type="submit"
           size="none"

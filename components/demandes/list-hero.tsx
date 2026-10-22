@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { unstable_rethrow } from "next/navigation";
 import { Suspense } from "react";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { plural } from "@/lib/format";
 import { countRequests } from "@/server/queries/list-requests";
 import { PageTitle } from "./app-header";
@@ -32,17 +32,15 @@ export function ListHero() {
           </Suspense>
         </p>
       </div>
-      <Button
-        nativeButton={false}
-        render={<Link href="/demandes/nouvelle" />}
-        size="none"
-        className="min-h-12 max-w-[280px] flex-auto gap-2.5 rounded-[14px] px-[22px] py-3.5 text-[15px] shadow-[0_8px_24px_-8px_rgba(123,92,245,.7)]"
+      <Link
+        href="/demandes/nouvelle"
+        className={buttonVariants({ size: "none", className: "min-h-12 max-w-[280px] flex-auto gap-2.5 rounded-[14px] px-[22px] py-3.5 text-[15px] shadow-[0_8px_24px_-8px_rgba(123,92,245,.7)]" })}
       >
         <span aria-hidden="true" className="text-xl leading-none font-medium">
           +
         </span>{" "}
         Ajouter une demande
-      </Button>
+      </Link>
     </div>
   );
 }

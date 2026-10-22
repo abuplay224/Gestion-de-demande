@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 
 const BTN = "min-h-11 gap-1.5 rounded-[11px] px-3.5 py-[9px] text-[13px]";
 
@@ -12,15 +12,12 @@ function PageButton({ page, disabled, children }: { page: number; disabled: bool
     );
   }
   return (
-    <Button
-      variant="outline"
-      size="none"
-      nativeButton={false}
-      render={<Link href={page === 1 ? "/demandes" : `/demandes?page=${page}`} />}
-      className={BTN}
+    <Link
+      href={page === 1 ? "/demandes" : `/demandes?page=${page}`}
+      className={buttonVariants({ variant: "outline", size: "none", className: BTN })}
     >
       {children}
-    </Button>
+    </Link>
   );
 }
 
