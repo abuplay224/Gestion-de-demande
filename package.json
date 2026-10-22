@@ -14,7 +14,10 @@
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
     "db:test:deploy": "node scripts/with-test-db.mjs prisma migrate deploy",
-    "db:test:seed": "node scripts/with-test-db.mjs prisma db seed"
+    "db:test:seed": "node scripts/with-test-db.mjs prisma db seed",
+    "test": "vitest run",
+    "test:unit": "vitest run --project unit",
+    "test:integration": "vitest run --project integration"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
@@ -34,7 +37,7 @@
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",
-    "@types/node": "^20",
+    "@types/node": "^24.19.2",
     "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -44,6 +47,7 @@
     "prisma": "^7.10.1",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^5.0.5"
   }
 }
