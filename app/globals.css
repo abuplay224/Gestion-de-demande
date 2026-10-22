@@ -1,0 +1,220 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/* Jetons Doztra — valeurs exactes du prototype (docs/Doztra Demandes.dc.html) */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-mulish), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+  --font-heading: var(--font-sans);
+  /* Glyphes ★ ○ ☆ absents de Mulish : police système, comme le repli du prototype */
+  --font-glyph: system-ui, sans-serif;
+
+  /* Le prototype garde la hauteur de ligne « normal » du navigateur */
+  --text-xs--line-height: normal;
+  --text-sm--line-height: normal;
+  --text-base--line-height: normal;
+  --text-lg--line-height: normal;
+  --text-xl--line-height: normal;
+
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Marque */
+  --color-doztra-primary: #7b5cf5;
+  --color-doztra-primary-hover: #6a4bea;
+  --color-doztra-accent: #5a3be0;
+  --color-doztra-link-hover: #4f32c9;
+  --color-doztra-primary-soft: #eee9fe;
+  --color-doztra-fresh: #f3f0fe;
+
+  /* Texte */
+  --color-doztra-ink: #0e1020;
+  --color-doztra-ink-2: #2a2d3d;
+  --color-doztra-muted: #6b7083;
+  --color-doztra-muted-2: #4b5063;
+
+  /* Surfaces et bordures */
+  --color-doztra-page: #edeff3;
+  --color-doztra-soft: #f6f7f9;
+  --color-doztra-soft-2: #f5f6f8;
+  --color-doztra-line: #eef0f3;
+  --color-doztra-line-2: #eceef2;
+  --color-doztra-control: #e3e5eb;
+  --color-doztra-field: #fafbfc;
+  --color-doztra-skeleton: #e9ebef;
+  --color-doztra-skeleton-hi: #f4f5f7;
+
+  /* En-tête sombre */
+  --color-doztra-night: #0b0d17;
+  --color-doztra-night-2: #1b1f33;
+  --color-doztra-night-surface: #1c2033;
+  --color-doztra-night-avatar: #2a2f47;
+  --color-doztra-night-border: #3a3f5a;
+  --color-doztra-night-muted: #a5a9bc;
+  --color-doztra-night-soft: #d9dbe8;
+
+  /* Priorité */
+  --color-doztra-prio-bg: #fde8ef;
+  --color-doztra-prio-fg: #b0174a;
+  --color-doztra-normal-bg: #f0f1f4;
+  --color-doztra-star: #e5376b;
+  --color-doztra-star-on-dark: #ff7aa2;
+
+  /* Erreur */
+  --color-doztra-error-bg: #fff5f7;
+  --color-doztra-error-border: #f8d4de;
+  --color-doztra-error-chip: #fde3ea;
+  --color-doztra-error: #c2224f;
+  --color-doztra-error-title: #8e1638;
+  --color-doztra-error-field: #e5376b;
+
+  /* Avatars (fond, texte) */
+  --color-doztra-av1-bg: #eee9fe;
+  --color-doztra-av1-fg: #5a3be0;
+  --color-doztra-av2-bg: #fde8ef;
+  --color-doztra-av2-fg: #b0174a;
+  --color-doztra-av3-bg: #e3f6ec;
+  --color-doztra-av3-fg: #16794a;
+  --color-doztra-av4-bg: #fff2dc;
+  --color-doztra-av4-fg: #9a5b00;
+  --color-doztra-av5-bg: #e4eefd;
+  --color-doztra-av5-fg: #2456b8;
+  --color-doztra-av6-bg: #eaebf0;
+  --color-doztra-av6-fg: #3a3f55;
+
+  --animate-shimmer: shimmer 1.3s linear infinite;
+  --animate-fade-in: fadeIn 0.2s ease;
+  --animate-slide-in: slideIn 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
+  --animate-toast-in: toastIn 0.25s ease;
+}
+
+/* Variables shadcn/ui branchées sur la charte Doztra (thème clair uniquement) */
+:root {
+  --background: #edeff3;
+  --foreground: #0e1020;
+  --card: #ffffff;
+  --card-foreground: #0e1020;
+  --popover: #ffffff;
+  --popover-foreground: #0e1020;
+  --primary: #7b5cf5;
+  --primary-foreground: #ffffff;
+  --secondary: #f5f6f8;
+  --secondary-foreground: #0e1020;
+  --muted: #f5f6f8;
+  --muted-foreground: #6b7083;
+  --accent: #eee9fe;
+  --accent-foreground: #5a3be0;
+  --destructive: #c2224f;
+  --border: #e3e5eb;
+  --input: #e3e5eb;
+  --ring: #7b5cf5;
+  --radius: 0.75rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html,
+  body {
+    margin: 0;
+    background: var(--color-doztra-page);
+    color: var(--color-doztra-ink);
+    line-height: normal;
+    -webkit-font-smoothing: antialiased;
+  }
+  html {
+    @apply font-sans;
+  }
+  a {
+    color: var(--color-doztra-primary-hover);
+    text-decoration: none;
+  }
+  a:hover {
+    color: var(--color-doztra-link-hover);
+    text-decoration: underline;
+  }
+  button,
+  input,
+  textarea {
+    font-family: inherit;
+  }
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+  :focus-visible {
+    outline: 2.5px solid var(--color-doztra-primary);
+    outline-offset: 2px;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -400px 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
+}
+@keyframes slideIn {
+  from {
+    transform: translateX(40px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes toastIn {
+  from {
+    transform: translateY(16px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

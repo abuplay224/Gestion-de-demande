@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;background:#EDEFF3;font-family:'Mulish',system-ui,sans-serif;color:#0E1020;-webkit-font-smoothing:antialiased}
+a{color:#6A4BEA;text-decoration:none}
+a:hover{color:#4F32C9;text-decoration:underline}
+button,input,textarea{font-family:inherit}
+:focus-visible{outline:2.5px solid #7B5CF5;outline-offset:2px}
+@keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
+@keyframes slideIn{from{transform:translateX(40px);opacity:0}to{transform:none;opacity:1}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes toastIn{from{transform:translate(-50%,16px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
+</style>
+</helmet>
+<div style="min-height:100vh;padding:clamp(10px,2.4vw,24px);display:flex;flex-direction:column;gap:clamp(12px,2vw,20px);max-width:1320px;margin:0 auto">
+
+  <!-- ===== Dark header ===== -->
+  <header style="background:#0B0D17;background-image:radial-gradient(120% 140% at 100% 0%,#1B1F33 0%,#0B0D17 60%);border-radius:clamp(18px,2.4vw,26px);padding:clamp(16px,2.6vw,28px);color:#fff;display:flex;flex-direction:column;gap:clamp(22px,3.6vw,40px)">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:34px;height:34px;border-radius:10px;background:#7B5CF5;display:grid;place-items:center;font-weight:800;font-size:17px;color:#fff">D</div>
+        <span style="font-weight:800;font-size:17px;letter-spacing:-0.01em">Doztra</span>
+      </div>
+      <sc-if value="{{ isWide }}" hint-placeholder-val="{{ true }}">
+        <nav aria-label="Navigation principale" style="display:flex;gap:6px">
+          <button type="button" onClick="{{ goList }}" style="background:#1C2033;color:#fff;border:none;border-radius:11px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer">Demandes</button>
+        </nav>
+      </sc-if>
+      <div style="display:flex;align-items:center;gap:10px">
+        <sc-if value="{{ isWide }}" hint-placeholder-val="{{ true }}"><span style="font-size:13px;color:#A5A9BC">Équipe Doztra</span></sc-if>
+        <div aria-hidden="true" style="width:36px;height:36px;border-radius:50%;background:#2A2F47;border:1.5px solid #3A3F5A;display:grid;place-items:center;font-size:12px;font-weight:700;color:#D9DBE8">AB</div>
+      </div>
+    </div>
+
+    <sc-if value="{{ isList }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:18px">
+        <div style="display:flex;flex-direction:column;gap:8px;min-width:0">
+          <h1 style="margin:0;font-size:clamp(28px,5.4vw,40px);font-weight:800;letter-spacing:-0.025em;line-height:1.05">Demandes clients</h1>
+          <p style="margin:0;font-size:14px;color:#A5A9BC">{{ countLabel }}</p>
+        </div>
+        <button type="button" onClick="{{ openAdd }}" style="display:flex;align-items:center;justify-content:center;gap:10px;background:#7B5CF5;color:#fff;border:none;border-radius:14px;padding:14px 22px;font-size:15px;font-weight:700;cursor:pointer;min-height:48px;flex:1 1 auto;max-width:280px;box-shadow:0 8px 24px -8px rgba(123,92,245,.7)" style-hover="background:#6A4BEA">
+          <span aria-hidden="true" style="font-size:20px;line-height:1;font-weight:500">+</span> Ajouter une demande
+        </button>
+      </div>
+    </sc-if>
+    <sc-if value="{{ isNew }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <button type="button" onClick="{{ cancel }}" style="align-self:flex-start;background:#1C2033;color:#D9DBE8;border:none;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;display:flex;gap:8px;align-items:center;min-height:36px"><span aria-hidden="true">←</span> Demandes</button>
+        <h1 style="margin:0;font-size:clamp(28px,5.4vw,40px);font-weight:800;letter-spacing:-0.025em;line-height:1.05">Nouvelle demande</h1>
+        <p style="margin:0;font-size:14px;color:#A5A9BC">Les champs marqués d’un astérisque (*) sont obligatoires.</p>
+      </div>
+    </sc-if>
+  </header>
+
+  <!-- ===== LIST SCREEN ===== -->
+  <sc-if value="{{ isList }}" hint-placeholder-val="{{ true }}">
+    <main style="background:#fff;border-radius:clamp(18px,2.4vw,24px);padding:clamp(14px,2.2vw,24px);display:flex;flex-direction:column;gap:18px;min-width:0">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap">
+        <div style="display:flex;flex-direction:column;gap:3px">
+          <h2 style="margin:0;font-size:17px;font-weight:800">Registre des demandes</h2>
+          <p style="margin:0;font-size:13px;color:#6B7083">Prioritaires d’abord, puis les plus récentes</p>
+        </div>
+      </div>
+
+      <sc-if value="{{ showLoading }}" hint-placeholder-val="{{ false }}">
+        <div role="status" aria-live="polite" style="display:flex;flex-direction:column;gap:10px">
+          <span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Chargement des demandes…</span>
+          <sc-for list="{{ skeletons }}" as="s" hint-placeholder-count="5">
+            <div style="display:flex;align-items:center;gap:14px;padding:14px;border-radius:14px;background:#F6F7F9">
+              <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(90deg,#E9EBEF 0,#F4F5F7 50%,#E9EBEF 100%);background-size:800px 100%;animation:shimmer 1.3s linear infinite;flex:none"></div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+                <div style="height:11px;width:38%;border-radius:6px;background:linear-gradient(90deg,#E9EBEF 0,#F4F5F7 50%,#E9EBEF 100%);background-size:800px 100%;animation:shimmer 1.3s linear infinite"></div>
+                <div style="height:10px;width:68%;border-radius:6px;background:linear-gradient(90deg,#E9EBEF 0,#F4F5F7 50%,#E9EBEF 100%);background-size:800px 100%;animation:shimmer 1.3s linear infinite"></div>
+              </div>
+              <div style="width:86px;height:26px;border-radius:99px;background:#ECEEF2;flex:none"></div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showError }}" hint-placeholder-val="{{ false }}">
+        <div role="alert" style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;padding:48px 16px;background:#FFF5F7;border:1px solid #F8D4DE;border-radius:18px">
+          <div aria-hidden="true" style="width:48px;height:48px;border-radius:14px;background:#FDE3EA;color:#C2224F;display:grid;place-items:center;font-weight:800;font-size:22px">!</div>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <p style="margin:0;font-weight:800;font-size:16px;color:#8E1638">Impossible de charger les demandes</p>
+            <p style="margin:0;font-size:14px;color:#6B7083">Vérifiez votre connexion puis réessayez.</p>
+          </div>
+          <button type="button" onClick="{{ retry }}" style="background:#0E1020;color:#fff;border:none;border-radius:12px;padding:12px 22px;font-weight:700;font-size:14px;cursor:pointer;min-height:44px">Réessayer</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showEmpty }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:16px;padding:56px 16px;background:#F6F7F9;border-radius:18px">
+          <div aria-hidden="true" style="width:56px;height:56px;border-radius:16px;background:#EEE9FE;color:#7B5CF5;display:grid;place-items:center;font-size:26px;font-weight:500">+</div>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <p style="margin:0;font-weight:800;font-size:17px">Aucune demande pour le moment</p>
+            <p style="margin:0;font-size:14px;color:#6B7083">Les demandes saisies par l’équipe apparaîtront ici.</p>
+          </div>
+          <button type="button" onClick="{{ openAdd }}" style="background:#7B5CF5;color:#fff;border:none;border-radius:12px;padding:12px 22px;font-weight:700;font-size:14px;cursor:pointer;min-height:44px">Ajouter une demande</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showTable }}" hint-placeholder-val="{{ true }}">
+        <div style="overflow:hidden;min-width:0">
+          <table style="width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed;font-size:14px">
+            <colgroup><col style="width:24%"><col><col style="width:150px"><col style="width:130px"><col style="width:262px"></colgroup>
+            <thead>
+              <tr>
+                <th scope="col" style="text-align:left;font-weight:600;font-size:12.5px;color:#6B7083;padding:13px 14px;background:#F5F6F8;border-radius:12px 0 0 12px">Client</th>
+                <th scope="col" style="text-align:left;font-weight:600;font-size:12.5px;color:#6B7083;padding:13px 14px;background:#F5F6F8">Objet</th>
+                <th scope="col" style="text-align:left;font-weight:600;font-size:12.5px;color:#6B7083;padding:13px 14px;background:#F5F6F8">Créée le</th>
+                <th scope="col" style="text-align:left;font-weight:600;font-size:12.5px;color:#6B7083;padding:13px 14px;background:#F5F6F8">Priorité</th>
+                <th scope="col" style="text-align:right;font-weight:600;font-size:12.5px;color:#6B7083;padding:13px 14px;background:#F5F6F8;border-radius:0 12px 12px 0">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{ rows }}" as="r" hint-placeholder-count="8">
+                <tr style="background:{{ r.rowBg }};transition:background .4s">
+                  <td style="padding:14px;border-bottom:1px solid #EEF0F3">
+                    <div style="display:flex;align-items:center;gap:11px;min-width:0">
+                      <div aria-hidden="true" style="width:34px;height:34px;border-radius:50%;background:{{ r.avBg }};color:{{ r.avFg }};display:grid;place-items:center;font-size:12px;font-weight:800;flex:none">{{ r.initials }}</div>
+                      <span title="{{ r.customer_name }}" style="font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">{{ r.customer_name }}</span>
+                    </div>
+                  </td>
+                  <td style="padding:14px;border-bottom:1px solid #EEF0F3"><div title="{{ r.subject }}" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#2A2D3D">{{ r.subject }}</div></td>
+                  <td style="padding:14px;border-bottom:1px solid #EEF0F3;color:#2A2D3D;white-space:nowrap"><div style="font-weight:600">{{ r.dateLabel }}</div><div style="font-size:12.5px;color:#6B7083">{{ r.timeLabel }}</div></td>
+                  <td style="padding:14px;border-bottom:1px solid #EEF0F3">
+                    <sc-if value="{{ r.is_priority }}" hint-placeholder-val="{{ false }}">
+                      <span style="display:inline-flex;align-items:center;gap:6px;background:#FDE8EF;color:#B0174A;font-weight:700;font-size:12.5px;padding:5px 11px;border-radius:99px"><span aria-hidden="true">★</span>Prioritaire</span>
+                    </sc-if>
+                    <sc-if value="{{ r.isNormal }}" hint-placeholder-val="{{ true }}">
+                      <span style="display:inline-flex;align-items:center;gap:6px;background:#F0F1F4;color:#4B5063;font-weight:700;font-size:12.5px;padding:5px 11px;border-radius:99px"><span aria-hidden="true">○</span>Normale</span>
+                    </sc-if>
+                  </td>
+                  <td style="padding:14px;border-bottom:1px solid #EEF0F3">
+                    <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px">
+                      <button type="button" onClick="{{ r.onToggle }}" disabled="{{ r.pending }}" aria-busy="{{ r.pending }}" style="display:inline-flex;align-items:center;gap:7px;background:#fff;color:#0E1020;border:1.5px solid #E3E5EB;border-radius:11px;padding:8px 12px;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;min-height:38px;opacity:{{ r.btnOpacity }}" style-hover="border-color:#7B5CF5;color:#5A3BE0">
+                        <span aria-hidden="true" style="color:{{ r.starColor }}">{{ r.starGlyph }}</span>{{ r.prioLabel }}
+                      </button>
+                      <button type="button" onClick="{{ r.onView }}" aria-label="Voir la demande de {{ r.customer_name }}" style="width:38px;height:38px;flex:none;border-radius:11px;border:1.5px solid #E3E5EB;background:#fff;color:#0E1020;font-size:16px;font-weight:700;cursor:pointer;display:grid;place-items:center" style-hover="background:#0E1020;color:#fff;border-color:#0E1020">↗</button>
+                    </div>
+                  </td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showCards }}" hint-placeholder-val="{{ false }}">
+        <ul style="list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:12px">
+          <sc-for list="{{ rows }}" as="r" hint-placeholder-count="4">
+            <li style="border:1px solid #ECEEF2;border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:12px;background:{{ r.cardBg }};min-width:0">
+              <div style="display:flex;align-items:center;gap:11px;min-width:0">
+                <div aria-hidden="true" style="width:38px;height:38px;border-radius:50%;background:{{ r.avBg }};color:{{ r.avFg }};display:grid;place-items:center;font-size:12.5px;font-weight:800;flex:none">{{ r.initials }}</div>
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
+                  <span style="font-weight:800;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.customer_name }}</span>
+                  <span style="font-size:12.5px;color:#6B7083">{{ r.dateLabel }} · {{ r.timeLabel }}</span>
+                </div>
+                <sc-if value="{{ r.is_priority }}" hint-placeholder-val="{{ false }}">
+                  <span style="flex:none;display:inline-flex;align-items:center;gap:5px;background:#FDE8EF;color:#B0174A;font-weight:700;font-size:12px;padding:5px 10px;border-radius:99px"><span aria-hidden="true">★</span>Prioritaire</span>
+                </sc-if>
+                <sc-if value="{{ r.isNormal }}" hint-placeholder-val="{{ true }}">
+                  <span style="flex:none;display:inline-flex;align-items:center;gap:5px;background:#F0F1F4;color:#4B5063;font-weight:700;font-size:12px;padding:5px 10px;border-radius:99px"><span aria-hidden="true">○</span>Normale</span>
+                </sc-if>
+              </div>
+              <div style="background:#F5F6F8;border-radius:12px;padding:11px 13px;display:flex;flex-direction:column;gap:3px;min-width:0">
+                <span style="font-size:11.5px;color:#6B7083;font-weight:600">Objet</span>
+                <span style="font-size:14px;font-weight:700;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere">{{ r.subject }}</span>
+              </div>
+              <div style="display:flex;gap:8px">
+                <button type="button" onClick="{{ r.onToggle }}" disabled="{{ r.pending }}" aria-busy="{{ r.pending }}" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:7px;background:#fff;color:#0E1020;border:1.5px solid #E3E5EB;border-radius:12px;padding:10px 12px;font-size:13px;font-weight:700;cursor:pointer;min-height:44px;opacity:{{ r.btnOpacity }}">
+                  <span aria-hidden="true" style="color:{{ r.starColor }}">{{ r.starGlyph }}</span>{{ r.prioLabel }}
+                </button>
+                <button type="button" onClick="{{ r.onView }}" style="flex:none;display:inline-flex;align-items:center;gap:6px;background:#0E1020;color:#fff;border:none;border-radius:12px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;min-height:44px">Voir <span aria-hidden="true">↗</span></button>
+              </div>
+            </li>
+          </sc-for>
+        </ul>
+      </sc-if>
+
+      <sc-if value="{{ showPager }}" hint-placeholder-val="{{ true }}">
+        <nav aria-label="Pagination" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-top:4px">
+          <span style="font-size:13px;color:#6B7083">{{ pageLabel }}</span>
+          <div style="display:flex;gap:8px">
+            <button type="button" onClick="{{ onPrev }}" disabled="{{ prevDisabled }}" style="display:inline-flex;align-items:center;gap:6px;border:1.5px solid #E3E5EB;background:#fff;border-radius:11px;padding:9px 14px;font-size:13px;font-weight:700;color:#0E1020;cursor:pointer;min-height:44px;opacity:{{ prevOpacity }}"><span aria-hidden="true">‹</span> Précédent</button>
+            <button type="button" onClick="{{ onNext }}" disabled="{{ nextDisabled }}" style="display:inline-flex;align-items:center;gap:6px;border:1.5px solid #E3E5EB;background:#fff;border-radius:11px;padding:9px 14px;font-size:13px;font-weight:700;color:#0E1020;cursor:pointer;min-height:44px;opacity:{{ nextOpacity }}">Suivant <span aria-hidden="true">›</span></button>
+          </div>
+        </nav>
+      </sc-if>
+    </main>
+  </sc-if>
+
+  <!-- ===== CREATE SCREEN ===== -->
+  <sc-if value="{{ isNew }}" hint-placeholder-val="{{ false }}">
+    <main style="background:#fff;border-radius:clamp(18px,2.4vw,24px);padding:clamp(16px,3vw,32px);width:100%;max-width:820px;align-self:center">
+      <form onSubmit="{{ submit }}" novalidate="" style="display:flex;flex-direction:column;gap:26px">
+        <sc-if value="{{ submitError }}" hint-placeholder-val="{{ false }}">
+          <div role="alert" style="display:flex;gap:12px;background:#FFF5F7;border:1px solid #F8D4DE;border-radius:14px;padding:14px 16px">
+            <span aria-hidden="true" style="flex:none;width:24px;height:24px;border-radius:8px;background:#FDE3EA;color:#C2224F;display:grid;place-items:center;font-weight:800;font-size:13px">!</span>
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <strong style="font-size:14px;color:#8E1638">L’enregistrement a échoué</strong>
+              <span style="font-size:13.5px;color:#4B5063">{{ submitError }}</span>
+            </div>
+          </div>
+        </sc-if>
+
+        <fieldset style="border:none;margin:0;padding:0;display:flex;flex-direction:column;gap:16px">
+          <legend style="font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#6B7083;padding:0;margin-bottom:14px">Client</legend>
+          <div style="display:flex;flex-direction:column;gap:7px">
+            <label for="f-name" style="font-size:14px;font-weight:700">Nom du client ou de l’entreprise *</label>
+            <input id="f-name" name="name" type="text" autocomplete="organization" value="{{ form.name }}" onChange="{{ onName }}" onBlur="{{ blurName }}" aria-invalid="{{ inv.name }}" aria-describedby="err-name" maxlength="160" style="width:100%;border:1.5px solid {{ bd.name }};border-radius:12px;padding:13px 14px;font-size:16px;background:#FAFBFC;color:#0E1020;min-height:48px">
+            <sc-if value="{{ errors.name }}" hint-placeholder-val="{{ false }}"><p id="err-name" style="margin:0;font-size:13px;color:#C2224F;font-weight:600">{{ errors.name }}</p></sc-if>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:16px">
+            <div style="display:flex;flex-direction:column;gap:7px">
+              <label for="f-email" style="font-size:14px;font-weight:700">E-mail <span style="font-weight:500;color:#6B7083">(facultatif)</span></label>
+              <input id="f-email" name="email" type="email" inputmode="email" autocomplete="email" value="{{ form.email }}" onChange="{{ onEmail }}" onBlur="{{ blurEmail }}" aria-invalid="{{ inv.email }}" aria-describedby="err-email" style="width:100%;border:1.5px solid {{ bd.email }};border-radius:12px;padding:13px 14px;font-size:16px;background:#FAFBFC;color:#0E1020;min-height:48px">
+              <sc-if value="{{ errors.email }}" hint-placeholder-val="{{ false }}"><p id="err-email" style="margin:0;font-size:13px;color:#C2224F;font-weight:600">{{ errors.email }}</p></sc-if>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:7px">
+              <label for="f-phone" style="font-size:14px;font-weight:700">Téléphone <span style="font-weight:500;color:#6B7083">(facultatif)</span></label>
+              <input id="f-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+224 6XX XX XX XX" value="{{ form.phone }}" onChange="{{ onPhone }}" onBlur="{{ blurPhone }}" aria-invalid="{{ inv.phone }}" aria-describedby="err-phone" style="width:100%;border:1.5px solid {{ bd.phone }};border-radius:12px;padding:13px 14px;font-size:16px;background:#FAFBFC;color:#0E1020;min-height:48px">
+              <sc-if value="{{ errors.phone }}" hint-placeholder-val="{{ false }}"><p id="err-phone" style="margin:0;font-size:13px;color:#C2224F;font-weight:600">{{ errors.phone }}</p></sc-if>
+            </div>
+          </div>
+        </fieldset>
+
+        <div style="height:1px;background:#EEF0F3"></div>
+
+        <fieldset style="border:none;margin:0;padding:0;display:flex;flex-direction:column;gap:16px">
+          <legend style="font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#6B7083;padding:0;margin-bottom:14px">Demande</legend>
+          <div style="display:flex;flex-direction:column;gap:7px">
+            <label for="f-subject" style="font-size:14px;font-weight:700">Objet *</label>
+            <input id="f-subject" name="subject" type="text" value="{{ form.subject }}" onChange="{{ onSubject }}" onBlur="{{ blurSubject }}" aria-invalid="{{ inv.subject }}" aria-describedby="err-subject" style="width:100%;border:1.5px solid {{ bd.subject }};border-radius:12px;padding:13px 14px;font-size:16px;background:#FAFBFC;color:#0E1020;min-height:48px">
+            <sc-if value="{{ errors.subject }}" hint-placeholder-val="{{ false }}"><p id="err-subject" style="margin:0;font-size:13px;color:#C2224F;font-weight:600">{{ errors.subject }}</p></sc-if>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:7px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px">
+              <label for="f-desc" style="font-size:14px;font-weight:700">Description *</label>
+              <span aria-live="polite" style="font-size:12.5px;color:{{ descCountColor }};font-variant-numeric:tabular-nums">{{ descCount }}</span>
+            </div>
+            <textarea id="f-desc" name="description" rows="6" value="{{ form.description }}" onChange="{{ onDesc }}" onBlur="{{ blurDesc }}" aria-invalid="{{ inv.description }}" aria-describedby="err-desc" style="width:100%;border:1.5px solid {{ bd.description }};border-radius:12px;padding:13px 14px;font-size:16px;line-height:1.5;background:#FAFBFC;color:#0E1020;resize:vertical;min-height:150px"></textarea>
+            <sc-if value="{{ errors.description }}" hint-placeholder-val="{{ false }}"><p id="err-desc" style="margin:0;font-size:13px;color:#C2224F;font-weight:600">{{ errors.description }}</p></sc-if>
+          </div>
+        </fieldset>
+
+        <div style="display:flex;flex-wrap:wrap-reverse;justify-content:flex-end;gap:10px;padding-top:4px">
+          <button type="button" onClick="{{ cancel }}" style="flex:1 1 140px;max-width:200px;background:#fff;color:#0E1020;border:1.5px solid #E3E5EB;border-radius:13px;padding:13px 20px;font-size:15px;font-weight:700;cursor:pointer;min-height:50px">Annuler</button>
+          <button type="submit" disabled="{{ submitting }}" aria-busy="{{ submitting }}" style="flex:1 1 180px;max-width:260px;background:#7B5CF5;color:#fff;border:none;border-radius:13px;padding:13px 20px;font-size:15px;font-weight:700;cursor:pointer;min-height:50px;opacity:{{ submitOpacity }};box-shadow:0 8px 24px -10px rgba(123,92,245,.8)">{{ submitLabel }}</button>
+        </div>
+      </form>
+    </main>
+  </sc-if>
+
+  <!-- ===== DETAIL SHEET ===== -->
+  <sc-if value="{{ sheetOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;z-index:40;display:flex;justify-content:flex-end">
+      <div onClick="{{ closeSheet }}" style="position:absolute;inset:0;background:rgba(8,10,20,.48);animation:fadeIn .2s ease"></div>
+      <aside role="dialog" aria-modal="true" aria-labelledby="sheet-title" style="position:relative;width:min(480px,100%);height:100%;background:#fff;display:flex;flex-direction:column;animation:slideIn .26s cubic-bezier(.2,.8,.2,1);box-shadow:-20px 0 60px -20px rgba(0,0,0,.35)">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 20px;border-bottom:1px solid #EEF0F3">
+          <sc-if value="{{ sheet.is_priority }}" hint-placeholder-val="{{ false }}">
+            <span style="display:inline-flex;align-items:center;gap:6px;background:#FDE8EF;color:#B0174A;font-weight:700;font-size:12.5px;padding:5px 11px;border-radius:99px"><span aria-hidden="true">★</span>Prioritaire</span>
+          </sc-if>
+          <sc-if value="{{ sheet.isNormal }}" hint-placeholder-val="{{ true }}">
+            <span style="display:inline-flex;align-items:center;gap:6px;background:#F0F1F4;color:#4B5063;font-weight:700;font-size:12.5px;padding:5px 11px;border-radius:99px"><span aria-hidden="true">○</span>Normale</span>
+          </sc-if>
+          <button id="sheet-close" type="button" onClick="{{ closeSheet }}" aria-label="Fermer le détail" style="width:44px;height:44px;border-radius:12px;border:1.5px solid #E3E5EB;background:#fff;font-size:20px;cursor:pointer;display:grid;place-items:center;color:#0E1020">×</button>
+        </div>
+        <div style="flex:1;overflow-y:auto;padding:22px 20px;display:flex;flex-direction:column;gap:20px">
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <span style="font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#6B7083">Objet</span>
+            <h2 id="sheet-title" style="margin:0;font-size:22px;font-weight:800;letter-spacing:-0.015em;line-height:1.25;overflow-wrap:anywhere">{{ sheet.subject }}</h2>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#6B7083">Description</span>
+            <p style="margin:0;font-size:15px;line-height:1.6;color:#2A2D3D;white-space:pre-wrap;overflow-wrap:anywhere">{{ sheet.description }}</p>
+          </div>
+          <div style="background:#F5F6F8;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;align-items:center;gap:11px;min-width:0">
+              <div aria-hidden="true" style="width:40px;height:40px;border-radius:50%;background:{{ sheet.avBg }};color:{{ sheet.avFg }};display:grid;place-items:center;font-size:13px;font-weight:800;flex:none">{{ sheet.initials }}</div>
+              <div style="display:flex;flex-direction:column;gap:1px;min-width:0">
+                <span style="font-size:12px;color:#6B7083;font-weight:600">Client</span>
+                <span style="font-weight:800;font-size:15px;overflow-wrap:anywhere">{{ sheet.customer_name }}</span>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:10px">
+              <div style="background:#fff;border-radius:12px;padding:11px 13px;display:flex;flex-direction:column;gap:3px;min-width:0">
+                <span style="font-size:11.5px;color:#6B7083;font-weight:600">E-mail</span>
+                <sc-if value="{{ sheet.customer_email }}" hint-placeholder-val="{{ true }}"><a href="{{ sheet.mailto }}" style="font-size:14px;font-weight:700;overflow-wrap:anywhere">{{ sheet.customer_email }}</a></sc-if>
+                <sc-if value="{{ sheet.noEmail }}" hint-placeholder-val="{{ false }}"><span style="font-size:14px;color:#6B7083">Non renseigné</span></sc-if>
+              </div>
+              <div style="background:#fff;border-radius:12px;padding:11px 13px;display:flex;flex-direction:column;gap:3px;min-width:0">
+                <span style="font-size:11.5px;color:#6B7083;font-weight:600">Téléphone</span>
+                <sc-if value="{{ sheet.customer_phone }}" hint-placeholder-val="{{ true }}"><a href="{{ sheet.tel }}" style="font-size:14px;font-weight:700;overflow-wrap:anywhere">{{ sheet.customer_phone }}</a></sc-if>
+                <sc-if value="{{ sheet.noPhone }}" hint-placeholder-val="{{ false }}"><span style="font-size:14px;color:#6B7083">Non renseigné</span></sc-if>
+              </div>
+            </div>
+          </div>
+          <dl style="margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">
+            <div style="border:1px solid #EEF0F3;border-radius:12px;padding:11px 13px"><dt style="font-size:11.5px;color:#6B7083;font-weight:600">Créée le</dt><dd style="margin:3px 0 0;font-size:14px;font-weight:700">{{ sheet.createdFull }}</dd></div>
+            <div style="border:1px solid #EEF0F3;border-radius:12px;padding:11px 13px"><dt style="font-size:11.5px;color:#6B7083;font-weight:600">Modifiée le</dt><dd style="margin:3px 0 0;font-size:14px;font-weight:700">{{ sheet.updatedFull }}</dd></div>
+            <div style="grid-column:1 / -1;border:1px solid #EEF0F3;border-radius:12px;padding:11px 13px"><dt style="font-size:11.5px;color:#6B7083;font-weight:600">Identifiant</dt><dd style="margin:3px 0 0;font-family:'JetBrains Mono',monospace;font-size:13px;word-break:break-all;color:#2A2D3D">{{ sheet.id }}</dd></div>
+          </dl>
+          <p style="margin:0;font-size:12.5px;color:#6B7083">Heures affichées dans le fuseau Africa/Conakry. Lecture seule.</p>
+        </div>
+        <div style="padding:16px 20px;border-top:1px solid #EEF0F3">
+          <button type="button" onClick="{{ sheet.onToggle }}" disabled="{{ sheet.pending }}" aria-busy="{{ sheet.pending }}" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;background:#0E1020;color:#fff;border:none;border-radius:13px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;min-height:50px;opacity:{{ sheet.btnOpacity }}"><span aria-hidden="true" style="color:{{ sheet.starColorDark }}">{{ sheet.starGlyph }}</span>{{ sheet.prioLabel }}</button>
+        </div>
+      </aside>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+    <div role="status" aria-live="polite" style="position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:10px;background:{{ toast.bg }};color:#fff;padding:13px 18px;border-radius:14px;font-size:14px;font-weight:700;box-shadow:0 16px 40px -12px rgba(0,0,0,.45);animation:toastIn .25s ease;max-width:calc(100vw - 32px)">
+      <span aria-hidden="true" style="width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.18);display:grid;place-items:center;font-size:12px;flex:none">{{ toast.icon }}</span>{{ toast.text }}
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;dataState&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;normal&quot;,&quot;vide&quot;,&quot;chargement&quot;,&quot;erreur&quot;],&quot;default&quot;:&quot;normal&quot;,&quot;tsType&quot;:&quot;'normal'|'vide'|'chargement'|'erreur'&quot;,&quot;section&quot;:&quot;Simulation&quot;},&quot;simulateFailure&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Simulation&quot;}}">
+const PAL=[['#EEE9FE','#5A3BE0'],['#FDE8EF','#B0174A'],['#E3F6EC','#16794A'],['#FFF2DC','#9A5B00'],['#E4EEFD','#2456B8'],['#EAEBF0','#3A3F55']];
+const SEED=[
+['Société Minière de Boké','Retard de livraison des pièces de rechange',"Les pièces commandées le 2 octobre ne sont toujours pas arrivées sur le site de Kamsar. Merci de nous indiquer une date de livraison ferme, la ligne 3 est à l'arrêt.",'achats@smb-gn.com','+224 622 10 45 87',true],
+['Mariama Diallo','Facture du mois de septembre incorrecte',"Le montant facturé ne correspond pas au devis signé : une ligne de maintenance apparaît deux fois. Pouvez-vous émettre un avoir ?",'mariama.diallo@gmail.com','+224 620 04 11 32',false],
+['Orange Guinée — Direction IT','Demande de devis pour 40 postes',"Nous souhaitons recevoir un devis pour l'équipement de 40 postes de travail (configuration standard bureautique) avant fin novembre.",'dsi@orange-guinee.com',null,false],
+['Hôtel Kaloum','Coupure du service depuis ce matin',"Depuis 7h ce matin, le système de réservation est inaccessible pour la réception. Les clients attendent au comptoir.",null,'+224 657 33 90 01',true],
+['Alpha Condé Transports','Changement d’adresse de facturation',"Merci de mettre à jour notre adresse de facturation : Immeuble Al Iman, Kaloum, Conakry.",'compta@act-transports.gn',null,false],
+['Fatoumata Bah','Question sur la garantie',"Mon appareil acheté en mars présente un défaut d'écran. Est-il toujours couvert par la garantie et quelle est la procédure ?",'fatou.bah@yahoo.fr','0622 45 78 90',false],
+['Clinique Pasteur','Accès bloqué pour deux utilisateurs',"Deux de nos secrétaires ne peuvent plus se connecter depuis la mise à jour d'hier. Message : compte verrouillé.",'it@clinique-pasteur.gn','+224 664 12 00 00',true],
+['Ibrahima Sow','Demande de rappel',"Bonjour, je souhaite être rappelé pour discuter d'un abonnement entreprise. Disponible après 15h.",null,'+224 621 98 76 54',false],
+['Groupe Sonoco','Formation des nouveaux agents',"Nous recrutons 6 agents en novembre et souhaitons planifier une session de formation sur l'outil.",'rh@sonoco.gn',null,false],
+['Boulangerie Le Fournil','Terminal de paiement hors service',"Le terminal affiche une erreur de connexion depuis hier soir. Nous ne pouvons plus accepter les cartes.",null,'+224 628 55 21 09',false],
+['Aïssatou Camara','Résiliation de contrat',"Je souhaite résilier mon contrat à compter du 1er décembre. Merci de me confirmer les démarches.",'a.camara@outlook.com',null,false],
+['Port Autonome de Conakry','Extension du contrat de maintenance',"Nous voulons étendre le contrat de maintenance au terminal à conteneurs. Merci de nous proposer un avenant.",'contrats@portconakry.gn','+224 631 00 22 44',false],
+['Mamadou Barry','Erreur sur le bon de commande',"Le bon n° 2041 indique 12 unités au lieu de 21. Merci de corriger avant expédition.",'m.barry@gmail.com',null,false],
+['Université Gamal Abdel Nasser','Partenariat pour stages',"Le département informatique souhaite proposer des stagiaires à Doztra pour le semestre prochain.",'partenariats@uganc.edu.gn',null,false],
+['Kadiatou Touré','Mot de passe oublié',"Je n'arrive pas à réinitialiser mon mot de passe, le lien reçu par e-mail a expiré.",'kadi.toure@gmail.com',null,false],
+['Ets Kouyaté & Fils','Demande de catalogue',"Pouvez-vous nous envoyer le catalogue 2026 avec les tarifs revendeurs ?",'contact@kouyate-fils.com','+224 655 67 43 21',false],
+['Moussa Keïta','Réclamation livraison endommagée',"Le colis reçu ce matin était ouvert et un article manque. Photos disponibles sur demande.",null,'+224 624 11 88 77',false],
+['Ministère du Commerce — DSI','Audit de sécurité',"Dans le cadre de notre audit annuel, nous demandons la documentation des mesures de sécurité appliquées.",'dsi@commerce.gov.gn',null,false],
+['Djénabou Sylla','Modification de rendez-vous',"Je ne pourrai pas être présente jeudi. Est-il possible de décaler l'intervention à lundi ?",'djenabou.s@gmail.com','+224 669 30 40 50',false],
+['Restaurant Le Damier','Facture en double',"Nous avons reçu deux factures identiques pour octobre. Laquelle devons-nous régler ?",'gerance@ledamier.gn',null,false],
+['Ousmane Diakité','Demande d’information tarifs',"Quels sont vos tarifs pour une petite entreprise de 5 personnes ?",null,null,false],
+['Total Énergies Guinée','Remplacement du matériel réseau',"Nous planifions le remplacement des commutateurs du siège. Merci de nous recontacter pour une visite technique.",'achats.gn@totalenergies.com','+224 622 00 00 11',false],
+['Hawa Kaba','Problème d’affichage application',"Sur mon téléphone, la page de suivi est coupée à droite. Modèle : Tecno Spark 10.",'hawa.kaba@gmail.com',null,false],
+['Cabinet Juridique Bangoura','Confidentialité des données',"Nous souhaitons connaître le lieu d'hébergement de nos données et la durée de conservation.",'contact@cabinet-bangoura.gn',null,false],
+['Sékou Fofana','Retour produit',"Je souhaite retourner l'imprimante achetée la semaine dernière, elle ne correspond pas à mes besoins.",'sekou.fofana@gmail.com','+224 620 77 66 55',false],
+['Banque Islamique de Guinée','Renouvellement des licences',"Nos licences arrivent à échéance le 30 novembre. Merci de nous adresser la proposition de renouvellement.",'informatique@big.gn',null,false],
+];
+function hex(n){let s='';for(let i=0;i<n;i++)s+='0123456789abcdef'[Math.floor(Math.random()*16)];return s}
+function uuid(){return `${hex(8)}-${hex(4)}-4${hex(3)}-${'89ab'[Math.floor(Math.random()*4)]}${hex(3)}-${hex(12)}`}
+function seed(){const base=Date.parse('2026-10-21T09:42:00Z');let t=base;return SEED.map((s,i)=>{t-=(i%3===0?3:i%3===1?5.5:20)*3600e3+i*61e3;const c=new Date(t).toISOString();return{id:uuid(),customer_name:s[0],subject:s[1],description:s[2],customer_email:s[3],customer_phone:s[4],is_priority:s[5],created_at:c,updated_at:c,seed:true,pal:i%PAL.length}})}
+const fD=new Intl.DateTimeFormat('fr-FR',{timeZone:'Africa/Conakry',day:'numeric',month:'short',year:'numeric'});
+const fT=new Intl.DateTimeFormat('fr-FR',{timeZone:'Africa/Conakry',hour:'2-digit',minute:'2-digit'});
+const EMPTY={name:'',email:'',phone:'',subject:'',description:''};
+const EMAIL=/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+function validate(f,key){const e={};const v=k=>(f[k]||'').trim();
+ const n=v('name');if(!n)e.name='Indiquez le nom du client ou de l’entreprise.';else if(n.length<2)e.name='Le nom doit contenir au moins 2 caractères.';else if(n.length>150)e.name=`150 caractères maximum (actuellement ${n.length}).`;
+ const m=v('email');if(m){if(m.length>254)e.email='254 caractères maximum.';else if(!EMAIL.test(m))e.email='Adresse e-mail invalide. Exemple : nom@entreprise.com';}
+ const p=v('phone');if(p.length>30)e.phone=`30 caractères maximum (actuellement ${p.length}).`;
+ const s=v('subject');if(!s)e.subject='Indiquez l’objet de la demande.';else if(s.length<3)e.subject='L’objet doit contenir au moins 3 caractères.';else if(s.length>200)e.subject=`200 caractères maximum (actuellement ${s.length}).`;
+ const d=v('description');if(!d)e.description='Décrivez la demande du client.';else if(d.length<10)e.description='La description doit contenir au moins 10 caractères.';else if(d.length>5000)e.description=`5 000 caractères maximum (actuellement ${d.length}).`;
+ return key?{[key]:e[key]}:e}
+function initials(n){const w=n.replace(/[—&-]/g,' ').split(/\s+/).filter(x=>x&&x[0]===x[0].toUpperCase()&&/[A-Za-zÀ-ÿ]/.test(x[0]));return((w[0]||n)[0]+((w[1]||'')[0]||'')).toUpperCase()}
+
+class Component extends DCLogic {
+  state={w:window.innerWidth,screen:'list',items:seed(),page:1,booting:true,pageLoading:false,errorCleared:false,openId:null,pending:{},toast:null,form:{...EMPTY},errors:{},submitting:false,submitError:null,subId:null,freshId:null};
+  componentDidMount(){
+    this.onResize=()=>this.setState({w:window.innerWidth});
+    this.onKey=e=>{if(e.key==='Escape'&&this.state.openId)this.closeSheet()};
+    window.addEventListener('resize',this.onResize);window.addEventListener('keydown',this.onKey);
+    this.t=setTimeout(()=>this.setState({booting:false}),750);
+  }
+  componentWillUnmount(){window.removeEventListener('resize',this.onResize);window.removeEventListener('keydown',this.onKey);clearTimeout(this.t)}
+  componentDidUpdate(_,prev){if(this.state.openId&&!prev.openId)setTimeout(()=>{const b=document.getElementById('sheet-close');b&&b.focus()},30)}
+  showToast(text,kind='ok'){clearTimeout(this.tt);this.setState({toast:{text,bg:kind==='ok'?'#0E1020':'#B0174A',icon:kind==='ok'?'✓':'!'}});this.tt=setTimeout(()=>this.setState({toast:null}),3200)}
+  closeSheet=()=>{this.setState({openId:null});const el=this.lastFocus;setTimeout(()=>el&&el.isConnected&&el.focus(),30)};
+  sorted(){const ds=this.props.dataState??'normal';let it=this.state.items;if(ds==='vide')it=it.filter(i=>!i.seed);
+    return[...it].sort((a,b)=>(b.is_priority-a.is_priority)||(b.created_at<a.created_at?-1:b.created_at>a.created_at?1:0)||(b.id<a.id?-1:1))}
+  toggle(item){const target=!item.is_priority;if(this.state.pending[item.id])return;
+    this.setState(s=>({pending:{...s.pending,[item.id]:true}}));
+    setTimeout(()=>{const fail=this.props.simulateFailure??false;
+      this.setState(s=>{const pending={...s.pending};delete pending[item.id];
+        if(fail)return{pending};const now=new Date().toISOString();
+        return{pending,items:s.items.map(i=>i.id===item.id?{...i,is_priority:target,updated_at:i.is_priority===target?i.updated_at:now}:i)}});
+      if(fail)this.showToast('Impossible de modifier la priorité. L’état précédent est conservé.','err');
+      else this.showToast(target?'Demande marquée comme prioritaire':'Priorité retirée');
+    },650)}
+  goPage(p){this.setState({pageLoading:true,page:p});setTimeout(()=>{this.setState({pageLoading:false});window.scrollTo({top:0,behavior:'smooth'})},350)}
+  openAdd=()=>this.setState({screen:'new',form:{...EMPTY},errors:{},submitError:null,subId:uuid(),openId:null},()=>{window.scrollTo(0,0);setTimeout(()=>{const f=document.getElementById('f-name');f&&f.focus()},60)});
+  cancel=()=>{this.setState({screen:'list',submitError:null});window.scrollTo(0,0)};
+  setField(k,v){this.setState(s=>{const form={...s.form,[k]:v};const errors=s.errors[k]?{...s.errors,...validate(form,k)}:s.errors;return{form,errors}})}
+  blur(k){const r=validate(this.state.form,k);const v=(this.state.form[k]||'').trim();if(!v&&!this.state.errors[k])return;this.setState(s=>({errors:{...s.errors,...r}}))}
+  submit=e=>{e.preventDefault();if(this.state.submitting)return;
+    const errs=validate(this.state.form);const keys=Object.keys(errs).filter(k=>errs[k]);
+    if(keys.length){this.setState({errors:errs,submitError:null});const map={name:'f-name',email:'f-email',phone:'f-phone',subject:'f-subject',description:'f-desc'};setTimeout(()=>{const el=document.getElementById(map[keys[0]]);el&&el.focus()},30);return}
+    this.setState({submitting:true,submitError:null});
+    setTimeout(()=>{
+      if(this.props.simulateFailure??false){this.setState({submitting:false,submitError:'La base de données est momentanément indisponible. Votre saisie est conservée : vous pouvez réessayer sans risque de doublon.'});return}
+      const f=this.state.form,t=k=>{const v=(f[k]||'').trim();return v||null};const now=new Date().toISOString();
+      const exists=this.state.items.find(i=>i.id===this.state.subId);
+      const rec={id:this.state.subId,customer_name:t('name'),customer_email:t('email'),customer_phone:t('phone'),subject:t('subject'),description:t('description'),is_priority:false,created_at:now,updated_at:now,seed:false,pal:Math.floor(Math.random()*PAL.length)};
+      this.setState(s=>({submitting:false,screen:'list',page:1,items:exists?s.items:[rec,...s.items],freshId:rec.id,form:{...EMPTY},subId:null}));
+      window.scrollTo(0,0);this.showToast('Demande enregistrée');
+      clearTimeout(this.ft);this.ft=setTimeout(()=>this.setState({freshId:null}),2600);
+    },1100)};
+  retry=()=>{this.setState({pageLoading:true});setTimeout(()=>this.setState({pageLoading:false,errorCleared:true}),900)};
+  decorate(i){const pend=!!this.state.pending[i.id];const pal=PAL[i.pal];const c=new Date(i.created_at),u=new Date(i.updated_at);
+    return{...i,isNormal:!i.is_priority,initials:initials(i.customer_name),avBg:pal[0],avFg:pal[1],
+      dateLabel:fD.format(c),timeLabel:fT.format(c),createdFull:`${fD.format(c)} · ${fT.format(c)}`,updatedFull:`${fD.format(u)} · ${fT.format(u)}`,
+      pending:pend,btnOpacity:pend?0.55:1,prioLabel:pend?'Mise à jour…':(i.is_priority?'Retirer la priorité':'Marquer comme prioritaire'),
+      starGlyph:i.is_priority?'☆':'★',starColor:i.is_priority?'#6B7083':'#E5376B',starColorDark:i.is_priority?'#A5A9BC':'#FF7AA2',
+      rowBg:i.id===this.state.freshId?'#F3F0FE':'transparent',cardBg:i.id===this.state.freshId?'#F3F0FE':'#fff',
+      mailto:i.customer_email?`mailto:${i.customer_email}`:'',tel:i.customer_phone?`tel:${i.customer_phone.replace(/\s/g,'')}`:'',
+      noEmail:!i.customer_email,noPhone:!i.customer_phone,
+      onToggle:()=>this.toggle(i),onView:e=>{this.lastFocus=e.currentTarget;this.setState({openId:i.id})}}}
+  renderVals(){
+    const s=this.state,ds=this.props.dataState??'normal',wide=s.w>=960;
+    const all=this.sorted(),total=all.length,pages=Math.max(1,Math.ceil(total/20)),page=Math.min(s.page,pages);
+    const rows=all.slice((page-1)*20,page*20).map(i=>this.decorate(i));
+    const loading=ds==='chargement'||s.booting||s.pageLoading;
+    const error=!loading&&ds==='erreur'&&!s.errorCleared;
+    const empty=!loading&&!error&&total===0;const data=!loading&&!error&&total>0;
+    const prio=all.filter(i=>i.is_priority).length;
+    const open=s.openId&&all.find(i=>i.id===s.openId);
+    const bd={},inv={};for(const k of Object.keys(EMPTY)){bd[k]=s.errors[k]?'#E5376B':'#E3E5EB';inv[k]=s.errors[k]?'true':'false'}
+    const dl=(s.form.description||'').trim().length;
+    const F=k=>e=>this.setField(k,e.target.value),B=k=>()=>this.blur(k);
+    return{
+      isWide:wide,isList:s.screen==='list',isNew:s.screen==='new',goList:this.cancel,
+      countLabel:total?`${total} demande${total>1?'s':''} · ${prio} prioritaire${prio>1?'s':''}`:'Aucune demande enregistrée',
+      showLoading:loading,showError:error,showEmpty:empty,showTable:data&&wide,showCards:data&&!wide,showPager:data,
+      skeletons:[1,2,3,4,5],rows,
+      pageLabel:`Page ${page} sur ${pages} · ${(page-1)*20+1}–${Math.min(page*20,total)} sur ${total}`,
+      prevDisabled:page<=1,nextDisabled:page>=pages,prevOpacity:page<=1?0.4:1,nextOpacity:page>=pages?0.4:1,
+      onPrev:()=>page>1&&this.goPage(page-1),onNext:()=>page<pages&&this.goPage(page+1),
+      openAdd:this.openAdd,cancel:this.cancel,retry:this.retry,
+      sheetOpen:!!open,sheet:open?this.decorate(open):{},closeSheet:this.closeSheet,
+      toast:s.toast,
+      form:s.form,errors:s.errors,bd,inv,
+      onName:F('name'),onEmail:F('email'),onPhone:F('phone'),onSubject:F('subject'),onDesc:F('description'),
+      blurName:B('name'),blurEmail:B('email'),blurPhone:B('phone'),blurSubject:B('subject'),blurDesc:B('description'),
+      descCount:`${dl.toLocaleString('fr-FR')} / 5 000`,descCountColor:dl>5000||(dl>0&&dl<10)?'#C2224F':'#6B7083',
+      submit:this.submit,submitting:s.submitting,submitLabel:s.submitting?'Enregistrement…':'Enregistrer',submitOpacity:s.submitting?0.7:1,
+      submitError:s.submitError,
+    }}
+}
+</script>
+</body>
+</html>
