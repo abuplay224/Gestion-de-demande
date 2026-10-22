@@ -51,22 +51,32 @@ Pas de backend séparé, pas d'API REST publique. Versions stables au démarrage
 Le dépôt utilise **npm** (`package-lock.json`).
 
 ```bash
-npm install                  # installation
+npm install                  # installation (+ prisma generate)
 npm run dev                  # serveur de développement
 npm run build && npm start   # build de production
 npm run lint                 # ESLint
 npm run typecheck            # tsc --noEmit
+npm test                     # Vitest : unitaires + intégration
+npm run test:unit            # unitaires seuls
+npm run test:integration     # intégration sur PostgreSQL (DATABASE_URL_TEST)
+npx vitest run tests/unit/request.schema.test.ts -t "R03"   # un seul test
+npm run db:migrate           # prisma migrate dev (base de dev)
+npm run db:deploy            # prisma migrate deploy
+npm run db:seed              # 26 demandes fictives du prototype (idempotent)
+npm run db:test:deploy       # migrations sur la base de test
 ```
 
-À ajouter avec les étapes suivantes : `test`, `test:e2e`, `prisma migrate dev|deploy`, `db:seed`.
+Avant toute proposition de livraison : `npm run lint && npm run typecheck && npm test`.
 
-Avant toute proposition de livraison : `npm run lint && npm run typecheck` (+ `npm test` dès qu'il existe).
+**Base de données.** `.env` (non versionné, modèle `.env.example`) définit `DATABASE_URL`
+(dev) et `DATABASE_URL_TEST` (test, vidée par les tests d'intégration ; son nom doit
+contenir « test »). Prisma 7 : configuration dans `prisma.config.ts`, client généré dans
+`generated/prisma` (non versionné), adaptateur `@prisma/adapter-pg`. Les CHECK de longueur
+sont écrits à la main dans le SQL de migration. Prisma refuse `migrate reset` lancé par un
+agent IA : ne pas le contourner, demander à l'utilisateur.
 
-**État actuel — données fictives.** Prisma/PostgreSQL ne sont pas encore branchés : les
-requêtes et Server Actions lisent un dépôt en mémoire (`server/data/fake-store.ts`, 26
-demandes du prototype, réinitialisé au redémarrage). `lib/auth.ts` est un stub. La variable
-`DOZTRA_SIMULATE=empty|error|slow|failure` reproduit les états vide, erreur, chargement et
-échec d'écriture. Le prototype de référence est `docs/Doztra Demandes.dc.html`.
+`lib/auth.ts` est encore un stub (mécanisme d'accès à décider). Le prototype de référence
+est `docs/Doztra Demandes.dc.html`.
 
 ---
 

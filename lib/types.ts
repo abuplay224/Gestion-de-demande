@@ -1,15 +1,7 @@
-/** Une demande client telle que lue en base (remplacée par le type Prisma à l’étape suivante). */
-export type CustomerRequest = {
-  id: string;
-  customerName: string;
-  customerEmail: string | null;
-  customerPhone: string | null;
-  subject: string;
-  description: string;
-  isPriority: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-};
+import type { CustomerRequest } from "@/generated/prisma/client";
+
+/** Une demande client, type issu du client Prisma généré. */
+export type { CustomerRequest };
 
 export type RequestPage = {
   items: CustomerRequest[];

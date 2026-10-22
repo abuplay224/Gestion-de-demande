@@ -2,8 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
+import { prisma } from "@/lib/db";
 import { type ActionResult, logServerError } from "@/lib/errors";
-import { simulation, store, wait } from "@/server/data/fake-store";
 import { setPrioritySchema } from "@/server/validation/request.schema";
 
 type PriorityResult = { id: string; isPriority: boolean; updatedAt: Date };
@@ -18,20 +18,20 @@ export async function setRequestPriority(input: unknown): Promise<ActionResult<P
   const { id, isPriority } = parsed.data;
 
   try {
-    await wait(450);
-    if (simulation === "failure") throw new Error("Écriture simulée en échec");
+    // RG19 : n’écrit (et ne change updated_at) que si la valeur change réellement
+    await prisma.customerRequest.updateMany({
+      where: { id, isPriority: { not: isPriority } },
+      data: { isPriority, updatedAt: new Date() },
+    });
 
-    const row = store().find((r) => r.id === id);
+    const row = await prisma.customerRequest.findUnique({
+      where: { id },
+      select: { id: true, isPriority: true, updatedAt: true },
+    });
     if (!row) return { ok: false, code: "NOT_FOUND", message: "Demande introuvable." };
 
-    if (row.isPriority !== isPriority) {
-      // RG19 : updated_at seulement sur changement réel
-      row.isPriority = isPriority;
-      row.updatedAt = new Date();
-    }
-
     revalidatePath("/demandes");
-    return { ok: true, data: { id: row.id, isPriority: row.isPriority, updatedAt: row.updatedAt } };
+    return { ok: true, data: row };
   } catch (e) {
     logServerError("setRequestPriority", e);
     return {
