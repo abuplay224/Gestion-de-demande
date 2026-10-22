@@ -1,5 +1,6 @@
 import { redirect, unstable_rethrow } from "next/navigation";
 import { logServerError } from "@/lib/errors";
+import { requirePageUser } from "@/lib/session";
 import type { RequestPage } from "@/lib/types";
 import { listRequests } from "@/server/queries/list-requests";
 import { pageSchema } from "@/server/validation/request.schema";
@@ -9,6 +10,7 @@ import { RequestsList } from "./requests-list";
 
 /** Contenu du registre : un seul des états vide / erreur / données (le chargement est le fallback Suspense). */
 export async function RequestsSection({ searchParams }: { searchParams: Promise<{ page?: string | string[] }> }) {
+  await requirePageUser(); // session expirée ou compte désactivé → /connexion
   const { page: raw } = await searchParams;
   const requested = pageSchema.parse(Array.isArray(raw) ? raw[0] : raw);
 

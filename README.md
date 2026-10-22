@@ -5,9 +5,23 @@ Application web interne qui permet à l’équipe Doztra de **saisir**, **consul
 le fuseau Africa/Conakry. Spécification : [docs/Cahier-des-charges-Doztra-MVP.md](docs/Cahier-des-charges-Doztra-MVP.md).
 Guide d’utilisation : [docs/guide-utilisateur.md](docs/guide-utilisateur.md).
 
-> ⚠️ **Accès non protégé.** Le mécanisme d’authentification reste à choisir par Doztra
-> (`lib/auth.ts` est un point d’entrée provisoire qui laisse tout passer). Ne pas déployer
-> avec des données réelles avant sa mise en place.
+## Accès et rôles
+
+Connexion par e-mail et mot de passe ([Better Auth](https://www.better-auth.com), sessions en
+cookie HttpOnly de 12 h, mots de passe hachés). **Aucune inscription publique** : les comptes
+sont créés par un administrateur.
+
+| Rôle | Droits |
+|---|---|
+| Agent | Consulter, ajouter et prioriser les demandes |
+| Administrateur | Idem + gérer les comptes (`/admin/utilisateurs`) : créer, changer le rôle, désactiver / réactiver |
+
+Toute page renvoie vers `/connexion` sans session (`proxy.ts`), et chaque Server Action
+vérifie elle-même la session et le rôle (`lib/session.ts`). Un administrateur ne peut ni
+modifier son propre rôle ni se désactiver. Un compte désactivé perd immédiatement ses sessions.
+
+> Écart assumé avec le cahier des charges (§2 « mêmes droits pour tous ») : les rôles Agent et
+> Administrateur ont été ajoutés à la demande de Doztra pour la gestion des comptes.
 
 ## Stack
 
@@ -41,6 +55,13 @@ puis :
 npm run db:migrate          # applique les migrations sur la base de développement
 npm run db:seed             # charge 26 demandes fictives (sans doublon si relancé)
 npm run db:test:deploy      # applique les migrations sur la base de test
+```
+
+Compléter `.env` avec `BETTER_AUTH_SECRET` (clé aléatoire, voir `.env.example`) et
+`BETTER_AUTH_URL`, puis créer le premier administrateur (mot de passe demandé sans écho) :
+
+```bash
+npm run admin:create -- --email prenom.nom@doztra.com --name "Prénom Nom"
 ```
 
 ## Lancement
@@ -83,7 +104,7 @@ désigne la même base que `DATABASE_URL`.
 | R12 | Base indisponible à la création | intégration (base simulée en échec) |
 | R13 | Échec du changement de priorité | intégration (base simulée en échec) |
 | R14 | Identifiant absent ou invalide | unitaire, intégration |
-| R15 | Visiteur non autorisé | **non couvert** — mécanisme d’accès à décider |
+| R15 | Visiteur non autorisé, y compris appel serveur direct | intégration (actions et lectures sans session, agent sur actions d’administration), e2e (redirections) |
 | R16 | Navigation mobile et clavier | e2e (375 px, parcours au clavier) ; vérification manuelle recommandée |
 | R17 | Modification depuis une autre session | e2e |
 | R18 | Même UUID, contenu différent | intégration |
@@ -108,6 +129,6 @@ tests/unit|integration|e2e/   Vitest et Playwright
 ## Déploiement
 
 1. Base PostgreSQL de production distincte, sauvegarde quotidienne et restauration testée.
-2. Variable `DATABASE_URL` fournie par l’hébergeur (jamais dans le dépôt).
+2. Variables `DATABASE_URL`, `BETTER_AUTH_SECRET` (propre à la production) et `BETTER_AUTH_URL` (URL https publique) fournies par l’hébergeur, jamais dans le dépôt.
 3. `npm ci && npm run db:deploy && npm run build && npm start`, derrière HTTPS.
-4. **Mettre en place la protection d’accès avant toute donnée réelle** (§8 du cahier des charges).
+4. Créer le premier administrateur avec `npm run admin:create`.

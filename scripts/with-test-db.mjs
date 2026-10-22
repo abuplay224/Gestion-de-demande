@@ -9,8 +9,10 @@ if (!url) {
   process.exit(1);
 }
 
-const [cmd, ...args] = process.argv.slice(2);
-const result = spawnSync(cmd, args, {
+// Les arguments contenant des espaces sont remis entre guillemets (exécution via le shell).
+const quote = (a) => (/[\s"]/.test(a) ? `"${a.replace(/"/g, '\\"')}"` : a);
+const command = process.argv.slice(2).map(quote).join(" ");
+const result = spawnSync(command, {
   stdio: "inherit",
   shell: true,
   env: { ...process.env, DATABASE_URL: url },

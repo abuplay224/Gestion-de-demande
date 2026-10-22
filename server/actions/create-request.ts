@@ -2,9 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { Prisma, type CustomerRequest } from "@/generated/prisma/client";
-import { requireUser } from "@/lib/auth";
+import { requireUser } from "@/lib/session";
 import { prisma } from "@/lib/db";
-import { type ActionResult, logServerError } from "@/lib/errors";
+import { type ActionResult, logServerError, unauthorized } from "@/lib/errors";
 import { createRequestSchema } from "@/server/validation/request.schema";
 
 type Parsed = ReturnType<typeof createRequestSchema.parse>;
@@ -30,7 +30,11 @@ const isUniqueViolation = (e: unknown) =>
   e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002";
 
 export async function createRequest(input: unknown): Promise<ActionResult<{ id: string }>> {
-  await requireUser();
+  try {
+    await requireUser(); // R15 : vérifié dans l’action elle-même
+  } catch (e) {
+    return unauthorized(e);
+  }
 
   const parsed = createRequestSchema.safeParse(input); // RG6
   if (!parsed.success) {

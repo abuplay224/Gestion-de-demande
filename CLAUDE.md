@@ -80,8 +80,18 @@ contenir « test »). Prisma 7 : configuration dans `prisma.config.ts`, client g
 sont écrits à la main dans le SQL de migration. Prisma refuse `migrate reset` lancé par un
 agent IA : ne pas le contourner, demander à l'utilisateur.
 
-`lib/auth.ts` est encore un stub (mécanisme d'accès à décider). Le prototype de référence
-est `docs/Doztra Demandes.dc.html`.
+**Accès.** Better Auth (e-mail + mot de passe, plugin admin) : config partagée dans
+`lib/auth-config.ts` (sans `server-only`, utilisée aussi par `scripts/create-admin.ts` et les
+tests), instance dans `lib/auth.ts`, vérifications dans `lib/session.ts` (`requireUser`,
+`requireAdmin`, `requirePageUser`). Chaque Server Action et requête appelle `requireUser` /
+`requireAdmin` elle-même ; `proxy.ts` ne fait qu'une redirection optimiste. Rôles `admin` /
+`agent` (CHECK en base, constantes dans `lib/roles.ts`, importable côté navigateur).
+Inscription publique désactivée : comptes créés par un admin (`/admin/utilisateurs`) ou par
+`npm run admin:create`. En tests d'intégration, `@/lib/session` est simulé (`asUser()`) ;
+en e2e, des comptes admin/agent sont recréés et leurs sessions enregistrées
+(`tests/e2e/.auth/`, non versionné).
+
+Le prototype de référence est `docs/Doztra Demandes.dc.html`.
 
 ---
 
@@ -183,11 +193,16 @@ tests/
 
 ---
 
-## 8. Décisions encore ouvertes
+## 8. Décisions
+
+Tranchées par Doztra (22 oct. 2026) : connexion e-mail + mot de passe (Better Auth), comptes
+créés par un administrateur (pas d'inscription publique), rôles Admin / Agent (écart
+assumé avec le §2 du cahier des charges).
+
+### Encore ouvertes
 
 Ne pas trancher seul ; demander avant d'implémenter :
 
-- Mécanisme de protection d'accès (fournisseur d'identité ou passerelle)
 - Hébergement et budget
 - Logo et couleur officielle de la charte Doztra (le prototype propose `#7B5CF5`)
 - Durée de conservation des données

@@ -1,15 +1,19 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireUser } from "@/lib/auth";
+import { requireUser } from "@/lib/session";
 import { prisma } from "@/lib/db";
-import { type ActionResult, logServerError } from "@/lib/errors";
+import { type ActionResult, logServerError, unauthorized } from "@/lib/errors";
 import { setPrioritySchema } from "@/server/validation/request.schema";
 
 type PriorityResult = { id: string; isPriority: boolean; updatedAt: Date };
 
 export async function setRequestPriority(input: unknown): Promise<ActionResult<PriorityResult>> {
-  await requireUser();
+  try {
+    await requireUser(); // R15 : vérifié dans l’action elle-même
+  } catch (e) {
+    return unauthorized(e);
+  }
 
   const parsed = setPrioritySchema.safeParse(input); // RG18 : booléen strict
   if (!parsed.success) {

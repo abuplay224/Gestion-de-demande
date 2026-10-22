@@ -2,7 +2,7 @@ import "dotenv/config";
 import { Client } from "pg";
 import { buildSeed } from "../../prisma/seed-data";
 
-function testUrl() {
+export function testUrl() {
   const url = process.env.DATABASE_URL_TEST;
   if (!url || url === process.env.DATABASE_URL || !/test/i.test(new URL(url).pathname)) {
     throw new Error("DATABASE_URL_TEST doit désigner une base de test distincte (nom contenant « test »)");

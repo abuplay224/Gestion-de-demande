@@ -1,6 +1,6 @@
 import "server-only";
 import { connection } from "next/server";
-import { requireUser } from "@/lib/auth";
+import { requireUser } from "@/lib/session";
 import { prisma } from "@/lib/db";
 import type { RequestPage } from "@/lib/types";
 

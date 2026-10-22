@@ -5,21 +5,21 @@ import { Suspense } from "react";
 import { AppHeader, PageTitle } from "@/components/demandes/app-header";
 import { RequestForm } from "@/components/demandes/request-form";
 import { buttonVariants } from "@/components/ui/button";
-import { requireUser } from "@/lib/auth";
+import { requirePageUser } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Nouvelle demande — Doztra" };
 
 // UUID de soumission généré côté serveur à l’ouverture du formulaire (RG7)
 async function FormWithSubmissionId() {
   await connection();
-  await requireUser();
+  await requirePageUser();
   return <RequestForm submissionId={crypto.randomUUID()} />;
 }
 
 export default function NouvelleDemandePage() {
   return (
     <>
-      <AppHeader>
+      <AppHeader section="demandes">
         <div className="flex flex-col gap-3">
           <Link
             href="/demandes"

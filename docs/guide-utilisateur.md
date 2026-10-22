@@ -3,6 +3,16 @@
 Cette application sert à noter les demandes reçues des clients, à les retrouver et à
 signaler celles à traiter en priorité. Toute l’équipe voit la même liste.
 
+## Se connecter
+
+Ouvrez l’application : la page **Connexion** s’affiche. Saisissez l’e-mail et le mot de passe
+fournis par un administrateur, puis **Se connecter**. Votre nom apparaît en haut à droite.
+
+- Il n’est pas possible de créer soi-même un compte. Pour obtenir un compte, ou si vous avez
+  oublié votre mot de passe, adressez-vous à un administrateur Doztra.
+- La session dure 12 heures. Sur un poste partagé, cliquez sur **Déconnexion** en partant.
+- Le message « Ce compte est désactivé » signifie qu’un administrateur a suspendu votre accès.
+
 ## Consulter les demandes
 
 La page **Demandes clients** affiche le registre :
@@ -55,6 +65,19 @@ Si la modification échoue, un message l’indique et la demande garde son état
 vous pouvez réessayer.
 
 La priorité ne déclenche ni notification ni échéance : c’est un repère pour l’équipe.
+
+## Gérer les comptes (administrateurs)
+
+Les administrateurs voient l’onglet **Utilisateurs** dans l’en-tête.
+
+- **Créer un compte** : nom, e-mail, rôle et mot de passe provisoire (10 caractères minimum),
+  puis **Créer le compte**. Transmettez le mot de passe à la personne par un canal sûr.
+- **Agent** : consulte, ajoute et priorise les demandes. **Administrateur** : en plus, gère les
+  comptes. **Passer administrateur** / **Passer agent** change le rôle.
+- **Désactiver** coupe immédiatement l’accès de la personne (elle est déconnectée) ;
+  **Réactiver** le rétablit. Les comptes ne sont jamais supprimés.
+- Vous ne pouvez ni modifier votre propre rôle ni désactiver votre propre compte : demandez-le à
+  un autre administrateur.
 
 ## Sur téléphone
 

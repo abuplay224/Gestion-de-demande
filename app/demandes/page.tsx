@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: "Demandes clients — Doztra" };
 export default function DemandesPage({ searchParams }: PageProps<"/demandes">) {
   return (
     <>
-      <AppHeader>
+      <AppHeader section="demandes">
         <ListHero />
       </AppHeader>
       <main className="flex min-w-0 flex-col gap-[18px] rounded-[clamp(18px,2.4vw,24px)] bg-white p-[clamp(14px,2.2vw,24px)]">

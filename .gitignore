@@ -48,3 +48,4 @@ next-env.d.ts
 
 # Prisma client généré
 /generated/
+/tests/e2e/.auth/
