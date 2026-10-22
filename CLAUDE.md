@@ -60,13 +60,18 @@ npm test                     # Vitest : unitaires + intégration
 npm run test:unit            # unitaires seuls
 npm run test:integration     # intégration sur PostgreSQL (DATABASE_URL_TEST)
 npx vitest run tests/unit/request.schema.test.ts -t "R03"   # un seul test
+npm run test:e2e             # build + Playwright (Edge, base de test, port 3200)
+npx playwright test -g "R09" # un seul parcours (après un build)
 npm run db:migrate           # prisma migrate dev (base de dev)
 npm run db:deploy            # prisma migrate deploy
 npm run db:seed              # 26 demandes fictives du prototype (idempotent)
 npm run db:test:deploy       # migrations sur la base de test
 ```
 
-Avant toute proposition de livraison : `npm run lint && npm run typecheck && npm test`.
+Avant toute proposition de livraison : `npm run lint && npm run typecheck && npm test && npm run test:e2e`.
+
+Liens stylés en bouton : `<Link className={buttonVariants(...)}>`, jamais
+`<Button render={<Link/>}>` (Base UI ajoute alors `role="button"` au lien).
 
 **Base de données.** `.env` (non versionné, modèle `.env.example`) définit `DATABASE_URL`
 (dev) et `DATABASE_URL_TEST` (test, vidée par les tests d'intégration ; son nom doit
