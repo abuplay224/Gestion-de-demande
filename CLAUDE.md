@@ -91,6 +91,17 @@ Inscription publique désactivée : comptes créés par un admin (`/admin/utilis
 en e2e, des comptes admin/agent sont recréés et leurs sessions enregistrées
 (`tests/e2e/.auth/`, non versionné).
 
+**API mobile.** `app/api/v1/*` (Route Handlers) pour l'app React Native. Logique métier
+unique dans `server/services/requests.ts` : Server Actions/queries web et Route Handlers ne
+sont que des adaptateurs (contrôle d'accès → service → `revalidatePath`). Ne jamais dupliquer
+une règle métier dans un handler. Socle `lib/api/` : `withApi` (enveloppe, 426, journal sans
+donnée personnelle), `requireApiUser` en première ligne de chaque handler protégé (401 jeton
+invalide, 403 compte désactivé), jetons opaques hachés dans `api_sessions` (accès 15 min,
+rafraîchissement à usage unique avec détection de réutilisation), limiteur de débit en mémoire.
+`proxy.ts` exclut `/api`. Contrat : `docs/api/openapi.yaml` et `docs/api-mobile.md`, à
+tenir à jour à chaque changement (évolutions additives uniquement dans v1). Skill :
+`doztra-demandes-api-mobile`.
+
 Le prototype de référence est `docs/Doztra Demandes.dc.html`.
 
 ---
@@ -198,6 +209,10 @@ tests/
 Tranchées par Doztra (22 oct. 2026) : connexion e-mail + mot de passe (Better Auth), comptes
 créés par un administrateur (pas d'inscription publique), rôles Admin / Agent (écart
 assumé avec le §2 du cahier des charges).
+
+Tranchées par Doztra (27 oct. 2026) : API HTTP v1 authentifiée pour l'app React Native
+(écart assumé avec le §6 « pas d'API REST publique »), jeton Bearer, périmètre auth +
+demandes (administration des comptes sur le web uniquement).
 
 ### Encore ouvertes
 

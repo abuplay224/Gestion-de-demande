@@ -23,6 +23,20 @@ modifier son propre rôle ni se désactiver. Un compte désactivé perd immédia
 > Écart assumé avec le cahier des charges (§2 « mêmes droits pour tous ») : les rôles Agent et
 > Administrateur ont été ajoutés à la demande de Doztra pour la gestion des comptes.
 
+## API mobile (v1)
+
+API HTTP authentifiée pour l’application React Native, sous `/api/v1` : connexion par jeton
+Bearer (accès 15 min, rafraîchissement à usage unique 30 jours), liste, détail, création
+idempotente et priorité des demandes. La gestion des comptes reste sur le web.
+
+- Guide du développeur mobile : [docs/api-mobile.md](docs/api-mobile.md)
+- Contrat OpenAPI 3.1 : [docs/api/openapi.yaml](docs/api/openapi.yaml)
+
+> Écart assumé avec le cahier des charges (§6 « pas d’API REST publique ») : l’API a été
+> ouverte à la demande de Doztra pour l’app mobile. Elle n’est pas publique (toute route sauf
+> `/health` exige une session) et réutilise exactement la logique métier du web
+> (`server/services/requests.ts`).
+
 ## Stack
 
 Next.js 16 (App Router, Server Actions) · React 19 · TypeScript · Tailwind CSS 4 ·
@@ -118,8 +132,11 @@ La cible de performance (§8 : 1 000 demandes, 5 utilisateurs) n’a pas encore 
 app/demandes/                 liste (Server Component) et /nouvelle (formulaire)
 components/demandes/          tableau, cartes, panneau de détail, formulaire, états
 components/ui/                composants shadcn/ui adaptés à la charte
-server/queries/               lecture paginée (listRequests, countRequests)
-server/actions/               Server Actions createRequest et setRequestPriority
+server/services/              logique métier des demandes, partagée par le web et l’API
+server/queries/               lectures web (session vérifiée → service)
+server/actions/               Server Actions web (session vérifiée → service)
+app/api/v1/                   API mobile (Route Handlers : jeton vérifié → service)
+lib/api/                      socle de l’API : réponses, erreurs, jetons, débit
 server/validation/            schémas Zod partagés interface / serveur
 lib/db.ts                     client Prisma (serveur uniquement)
 prisma/                       schéma, migrations (avec contraintes CHECK), seed
@@ -132,3 +149,5 @@ tests/unit|integration|e2e/   Vitest et Playwright
 2. Variables `DATABASE_URL`, `BETTER_AUTH_SECRET` (propre à la production) et `BETTER_AUTH_URL` (URL https publique) fournies par l’hébergeur, jamais dans le dépôt.
 3. `npm ci && npm run db:deploy && npm run build && npm start`, derrière HTTPS.
 4. Créer le premier administrateur avec `npm run admin:create`.
+5. Après chaque nouvelle migration (ex. `api_sessions` pour l’API mobile), l’appliquer sur la base de production **avant** de pousser le code qui en dépend.
+6. Facultatif : `MOBILE_MIN_APP_VERSION` force la mise à jour des apps mobiles plus anciennes (réponse 426).

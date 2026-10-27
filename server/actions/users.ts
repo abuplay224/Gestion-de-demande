@@ -3,6 +3,7 @@
 import { APIError } from "better-auth/api";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
+import { revokeUserApiSessions } from "@/lib/api/tokens";
 import { auth } from "@/lib/auth";
 import { type ActionResult, logServerError, unauthorized } from "@/lib/errors";
 import { requireAdmin, type SessionUser } from "@/lib/session";
@@ -86,7 +87,10 @@ export async function setUserActive(input: unknown): Promise<ActionResult<{ id: 
   try {
     const h = await headers();
     if (active) await auth.api.unbanUser({ body: { userId }, headers: h });
-    else await auth.api.banUser({ body: { userId, banReason: "Désactivé par un administrateur" }, headers: h });
+    else {
+      await auth.api.banUser({ body: { userId, banReason: "Désactivé par un administrateur" }, headers: h });
+      await revokeUserApiSessions(userId); // déconnecte aussi l’app mobile
+    }
     revalidatePath(PAGE);
     return { ok: true, data: { id: userId } };
   } catch (e) {

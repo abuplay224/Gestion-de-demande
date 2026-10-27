@@ -1,0 +1,492 @@
+openapi: 3.1.0
+info:
+  title: Doztra Demandes — API mobile
+  version: 1.0.0
+  summary: API de l’application mobile de gestion des demandes clients Doztra.
+  description: |
+    API réservée aux collaborateurs Doztra (aucune inscription : les comptes sont créés par
+    un administrateur sur le site web). Guide d’intégration : `docs/api-mobile.md`.
+
+    - JSON UTF-8 ; dates en ISO 8601 UTC (à afficher dans le fuseau Africa/Conakry).
+    - Succès : `{ "data": … }`. Erreur : `{ "error": { "code", "message", "fields"? } }`.
+      `code` pilote le comportement de l’app ; `message` est affichable tel quel (français).
+    - Authentification : `Authorization: Bearer <accessToken>` (15 min), renouvelé par
+      `POST /auth/refresh` (jeton de rafraîchissement à usage unique, 30 jours).
+    - En-tête recommandé : `X-App-Version: 1.0.0` (réponse 426 si une mise à jour est obligatoire).
+    - Réponses jamais mises en cache (`Cache-Control: no-store`).
+servers:
+  - url: https://{domaine}/api/v1
+    description: Production (domaine de production Vercel ou domaine personnalisé)
+    variables:
+      domaine:
+        default: gestion-de-demande.vercel.app
+  - url: http://localhost:3000/api/v1
+    description: Développement local (simulateur ; sur appareil réel, passer par un tunnel HTTPS)
+
+tags:
+  - name: Service
+  - name: Authentification
+  - name: Demandes
+
+security:
+  - bearerAuth: []
+
+paths:
+  /health:
+    get:
+      tags: [Service]
+      summary: État du service
+      security: []
+      responses:
+        "200":
+          description: Service disponible
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [status, version]
+                    properties:
+                      status: { type: string, const: ok }
+                      version: { type: string, examples: ["1.0.0"] }
+
+  /auth/login:
+    post:
+      tags: [Authentification]
+      summary: Connexion par e-mail et mot de passe
+      description: |
+        Ouvre une session pour l’appareil. Limité à 5 tentatives par compte et 20 par adresse IP
+        sur 15 minutes. Le message d’échec est identique que l’e-mail existe ou non.
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/AppVersion"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LoginBody" }
+            example: { email: binta.camara@doztra.com, password: "mot-de-passe-solide", deviceName: "iPhone de Binta" }
+      responses:
+        "200":
+          description: Connecté
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: "#/components/schemas/Session" }
+        "401": { $ref: "#/components/responses/BadCredentials" }
+        "403": { $ref: "#/components/responses/AccountDisabled" }
+        "413": { $ref: "#/components/responses/PayloadTooLarge" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+        "426": { $ref: "#/components/responses/UpgradeRequired" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+
+  /auth/refresh:
+    post:
+      tags: [Authentification]
+      summary: Renouveler les jetons (rotation)
+      description: |
+        Consomme le jeton de rafraîchissement et renvoie une **nouvelle paire** : remplacer les deux
+        jetons stockés. Un jeton déjà consommé est refusé et **révoque la session** de l’appareil
+        (vol présumé) : ne jamais lancer deux rafraîchissements en parallèle.
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/AppVersion"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken: { type: string, examples: ["dzr_…"] }
+      responses:
+        "200":
+          description: Nouvelle paire de jetons
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: "#/components/schemas/Session" }
+        "401": { $ref: "#/components/responses/SessionExpired" }
+        "403": { $ref: "#/components/responses/AccountDisabled" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+        "426": { $ref: "#/components/responses/UpgradeRequired" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+
+  /auth/logout:
+    post:
+      tags: [Authentification]
+      summary: Déconnecter l’appareil
+      description: |
+        Révoque la session de cet appareil uniquement. Envoyer le jeton d’accès (en-tête Bearer) ;
+        s’il a expiré, envoyer le jeton de rafraîchissement dans le corps. Idempotent.
+      security:
+        - bearerAuth: []
+        - {}
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken: { type: string }
+      responses:
+        "204": { description: Session révoquée (ou déjà révoquée) }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /auth/me:
+    get:
+      tags: [Authentification]
+      summary: Utilisateur connecté
+      parameters:
+        - $ref: "#/components/parameters/AppVersion"
+      responses:
+        "200":
+          description: Profil
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: "#/components/schemas/User" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/AccountDisabled" }
+        "426": { $ref: "#/components/responses/UpgradeRequired" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+
+  /requests:
+    get:
+      tags: [Demandes]
+      summary: Liste paginée des demandes
+      description: |
+        20 demandes par page, triées en base : prioritaires d’abord, puis les plus récentes, puis
+        identifiant décroissant. Une page hors bornes (ou invalide) renvoie la page corrigée : lire
+        `page` dans la réponse pour se recaler.
+      parameters:
+        - $ref: "#/components/parameters/AppVersion"
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, default: 1 }
+      responses:
+        "200":
+          description: Page de demandes
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: "#/components/schemas/RequestPage" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/AccountDisabled" }
+        "426": { $ref: "#/components/responses/UpgradeRequired" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+    post:
+      tags: [Demandes]
+      summary: Créer une demande (idempotent)
+      description: |
+        `submissionId` est un UUID v4 **généré par l’app** à l’ouverture du formulaire et réutilisé
+        à l’identique pour chaque nouvelle tentative de ce même formulaire.
+        - 201 : créée.
+        - 200 : déjà enregistrée avec ce `submissionId` et le même contenu (réessai sans danger).
+        - 409 : ce `submissionId` a déjà servi pour un contenu différent.
+        Priorité et dates sont fixées par le serveur (champs ignorés s’ils sont envoyés).
+      parameters:
+        - $ref: "#/components/parameters/AppVersion"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateRequestBody" }
+            example:
+              submissionId: 0b7c1c1e-2f4a-4d8e-9c55-3a1f2e6b9d10
+              customerName: Hôtel Kaloum
+              customerEmail: ""
+              customerPhone: "+224 657 33 90 01"
+              subject: Coupure du service depuis ce matin
+              description: Depuis 7h ce matin, le système de réservation est inaccessible pour la réception.
+      responses:
+        "201":
+          description: Demande créée
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: "#/components/schemas/CustomerRequest" }
+        "200":
+          description: Déjà enregistrée à l’identique (réessai)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: "#/components/schemas/CustomerRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/AccountDisabled" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "413": { $ref: "#/components/responses/PayloadTooLarge" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+        "426": { $ref: "#/components/responses/UpgradeRequired" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "503": { $ref: "#/components/responses/Unavailable" }
+
+  /requests/{id}:
+    get:
+      tags: [Demandes]
+      summary: Détail d’une demande
+      parameters:
+        - $ref: "#/components/parameters/AppVersion"
+        - $ref: "#/components/parameters/RequestId"
+      responses:
+        "200":
+          description: Demande
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: "#/components/schemas/CustomerRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/AccountDisabled" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+
+  /requests/{id}/priority:
+    patch:
+      tags: [Demandes]
+      summary: Marquer ou retirer la priorité
+      description: |
+        Envoyer la **valeur souhaitée** (`true` pour marquer, `false` pour retirer), jamais une
+        inversion. Envoyer deux fois la même valeur donne le même résultat ; `updatedAt` ne change
+        que si la valeur change réellement.
+      parameters:
+        - $ref: "#/components/parameters/AppVersion"
+        - $ref: "#/components/parameters/RequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [isPriority]
+              properties:
+                isPriority: { type: boolean, description: "Booléen strict : \"true\" ou 1 sont refusés (422)." }
+            example: { isPriority: true }
+      responses:
+        "200":
+          description: Priorité confirmée par la base
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: "#/components/schemas/PriorityResult" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/AccountDisabled" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+        "503": { $ref: "#/components/responses/Unavailable" }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Jeton d’accès opaque (préfixe `dza_`) obtenu par /auth/login ou /auth/refresh. Valable 15 minutes.
+
+  parameters:
+    AppVersion:
+      name: X-App-Version
+      in: header
+      required: false
+      description: Version de l’app (semver). Obligatoire dès que le serveur impose une version minimale.
+      schema: { type: string, examples: ["1.0.0"] }
+    RequestId:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+  schemas:
+    LoginBody:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, maxLength: 254, description: "Espaces et majuscules ignorés." }
+        password: { type: string, maxLength: 128 }
+        deviceName: { type: string, maxLength: 100, description: "Facultatif, ex. « iPhone de Binta »." }
+
+    User:
+      type: object
+      required: [id, name, email, role]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        email: { type: string }
+        role: { type: string, enum: [admin, agent], description: "Mêmes droits sur les demandes ; l’administration des comptes se fait sur le web." }
+
+    Session:
+      type: object
+      required: [tokenType, accessToken, accessTokenExpiresAt, refreshToken, refreshTokenExpiresAt, user]
+      properties:
+        tokenType: { type: string, const: Bearer }
+        accessToken: { type: string, description: "Préfixe dza_. 15 minutes." }
+        accessTokenExpiresAt: { type: string, format: date-time }
+        refreshToken: { type: string, description: "Préfixe dzr_. Usage unique, 30 jours." }
+        refreshTokenExpiresAt: { type: string, format: date-time }
+        user: { $ref: "#/components/schemas/User" }
+
+    CustomerRequest:
+      type: object
+      required: [id, customerName, customerEmail, customerPhone, subject, description, isPriority, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        customerName: { type: string, minLength: 2, maxLength: 150 }
+        customerEmail: { type: [string, "null"], maxLength: 254 }
+        customerPhone: { type: [string, "null"], maxLength: 30, description: "Conservé tel que saisi (+, zéro initial, espaces)." }
+        subject: { type: string, minLength: 3, maxLength: 200 }
+        description: { type: string, minLength: 10, maxLength: 5000, description: "Texte brut : à afficher comme texte, jamais interprété." }
+        isPriority: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    RequestPage:
+      type: object
+      required: [items, total, page, pageSize, pages]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/CustomerRequest" }
+        total: { type: integer, description: "Nombre total de demandes." }
+        page: { type: integer, description: "Page réellement renvoyée (corrigée si hors bornes)." }
+        pageSize: { type: integer, const: 20 }
+        pages: { type: integer, minimum: 1 }
+
+    CreateRequestBody:
+      type: object
+      required: [submissionId, customerName, subject, description]
+      description: Longueurs mesurées après suppression des espaces de début et de fin.
+      properties:
+        submissionId: { type: string, format: uuid }
+        customerName: { type: string, minLength: 2, maxLength: 150 }
+        customerEmail: { type: [string, "null"], maxLength: 254, description: "Facultatif ; vide → null." }
+        customerPhone: { type: [string, "null"], maxLength: 30, description: "Facultatif ; vide → null." }
+        subject: { type: string, minLength: 3, maxLength: 200 }
+        description: { type: string, minLength: 10, maxLength: 5000 }
+
+    PriorityResult:
+      type: object
+      required: [id, isPriority, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        isPriority: { type: boolean }
+        updatedAt: { type: string, format: date-time }
+
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              enum: [VALIDATION_ERROR, UNAUTHORIZED, NOT_FOUND, CONFLICT, INTERNAL_ERROR, RATE_LIMITED, PAYLOAD_TOO_LARGE, UPGRADE_REQUIRED]
+            message: { type: string, description: "Message en français, affichable à l’utilisateur." }
+            fields:
+              type: object
+              additionalProperties: { type: string }
+              description: "Uniquement pour VALIDATION_ERROR : message par champ (mêmes noms que le corps)."
+
+  responses:
+    ValidationError:
+      description: Données invalides (422)
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example:
+            error:
+              code: VALIDATION_ERROR
+              message: Vérifiez les champs signalés.
+              fields: { customerName: "Le nom doit contenir au moins 2 caractères." }
+    BadCredentials:
+      description: Identifiants incorrects (401)
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { error: { code: UNAUTHORIZED, message: "E-mail ou mot de passe incorrect." } }
+    Unauthorized:
+      description: Jeton absent, inconnu, expiré ou révoqué (401) — rafraîchir puis réessayer une fois
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { error: { code: UNAUTHORIZED, message: "Session expirée. Reconnectez-vous." } }
+    SessionExpired:
+      description: Jeton de rafraîchissement invalide, expiré ou déjà consommé (401) — retour à l’écran de connexion
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { error: { code: UNAUTHORIZED, message: "Session expirée. Reconnectez-vous." } }
+    AccountDisabled:
+      description: Compte désactivé par un administrateur (403) — effacer les jetons et déconnecter
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { error: { code: UNAUTHORIZED, message: "Ce compte est désactivé. Contactez un administrateur." } }
+    NotFound:
+      description: Demande introuvable (404)
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { error: { code: NOT_FOUND, message: "Demande introuvable." } }
+    Conflict:
+      description: submissionId déjà utilisé pour un contenu différent (409)
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example:
+            error:
+              code: CONFLICT
+              message: Cette demande a déjà été enregistrée avec un contenu différent. Rechargez la liste avant de réessayer.
+    PayloadTooLarge:
+      description: Corps supérieur à 64 Ko (413)
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    UpgradeRequired:
+      description: Version de l’app trop ancienne (426) — en-tête X-Min-App-Version
+      headers:
+        X-Min-App-Version: { schema: { type: string } }
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    RateLimited:
+      description: Trop de requêtes (429) — attendre Retry-After secondes
+      headers:
+        Retry-After: { schema: { type: integer } }
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Unavailable:
+      description: Base momentanément indisponible (503) — réessayer avec les mêmes données
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }

@@ -44,6 +44,7 @@ model User {
   updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
   sessions      Session[]
   accounts      Account[]
+  apiSessions   ApiSession[]
 
   @@map("users")
 }
@@ -95,4 +96,27 @@ model Verification {
 
   @@index([identifier])
   @@map("verifications")
+}
+
+// ─── API mobile ─────────────────────────────────────────────────────────────
+
+/// Session de l’app mobile, une par appareil connecté. Jetons opaques : seul leur SHA-256
+/// est stocké. Accès court (15 min) ; rafraîchissement à usage unique avec rotation.
+model ApiSession {
+  id                  String    @id @db.Uuid
+  userId              String    @map("user_id")
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessTokenHash     String    @unique @map("access_token_hash")
+  accessExpiresAt     DateTime  @map("access_expires_at") @db.Timestamptz(3)
+  refreshTokenHash    String    @unique @map("refresh_token_hash")
+  /// Jeton de rafraîchissement précédent : sa réutilisation signale un vol → session révoquée.
+  previousRefreshHash String?   @unique @map("previous_refresh_hash")
+  refreshExpiresAt    DateTime  @map("refresh_expires_at") @db.Timestamptz(3)
+  deviceName          String?   @map("device_name") @db.VarChar(100)
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  lastUsedAt          DateTime  @default(now()) @map("last_used_at") @db.Timestamptz(3)
+  revokedAt           DateTime? @map("revoked_at") @db.Timestamptz(3)
+
+  @@index([userId])
+  @@map("api_sessions")
 }

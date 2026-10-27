@@ -16,6 +16,7 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Tout sauf les ressources statiques de Next.js et les fichiers publics
-  matcher: ["/((?!_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|ico|webp)$).*)"],
+  // Tout sauf l’API (elle répond en JSON 401, contrôle dans chaque handler), les ressources
+  // statiques de Next.js et les fichiers publics
+  matcher: ["/((?!api/|_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|ico|webp)$).*)"],
 };
